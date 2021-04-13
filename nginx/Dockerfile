@@ -1,9 +1,8 @@
 FROM	alpine
 
 RUN		apk add nginx openssh openssl && \
-		apk add telegraf --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/ --allow-untrusted --no-cache && \
-		mkdir -p /run/nginx
-		# mkdir -p /run/nginx && \
+		mkdir -p /run/nginx && \
+		echo "root:toor" | chpasswd
 		# echo "root:toor" | chpasswd && \
 		# openssl req -x509 -nodes -days 365 \
 		# -newkey rsa:2048 -subj "/C=SP/ST=Spain/L=Madrid/O=42/CN=127.0.0.1" \
@@ -24,6 +23,7 @@ COPY	start.sh				/
 # We customize the SSH welcome message
 # RUN		echo 'Welcome to SSH of nginx by parmarti' > /etc/motd
 
-EXPOSE	80 443 22
+EXPOSE	5000
+# EXPOSE	80 443 22
 
 ENTRYPOINT	sh start.sh
