@@ -1,6 +1,6 @@
-FROM	alpine
+FROM alpine:3.12
 
-RUN		apk add curl nginx openrc openssh openssl && \
+RUN		apk add curl nginx openrc openssl libc6-compat && \
 		mkdir -p /run/nginx && \
 		echo "root:toor" | chpasswd && \
 		openssl req -x509 -nodes -days 365 \
@@ -8,22 +8,14 @@ RUN		apk add curl nginx openrc openssh openssl && \
 		-keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt && \
 		openssl dhparam -dsaparam -out /etc/ssl/certs/dhparam.pem 2048
 
-RUN		ssh-keygen -A
-
-COPY	/srcs/sshd_config			/etc/ssh/
-COPY	/srcs/ssl_params.conf		/etc/nginx/
 COPY	/srcs/nginx.conf			/etc/nginx/
 COPY	/srcs/start.sh				/
+RUN		chmod 777 /start.sh
 
 RUN mkdir /run/openrc/
 RUN touch /run/openrc/softlevel
 RUN rc-update add nginx
-RUN rc-update add sshd
 RUN rc-status
-# RUN rc-service nginx start
-
-RUN apk add supervisor
-COPY ./srcs/supervisord.conf /etc/
 
 RUN		mkdir /www
 COPY	/srcs/index.html			/www/
@@ -31,7 +23,15 @@ RUN 	adduser -D -g 'www' www
 RUN		chown -R www:www /var/lib/nginx
 RUN		chown -R www:www /www
 
-# EXPOSE	80 443 22
-EXPOSE 5050 443 22
 
-CMD /usr/bin/supervisord
+RUN wget https://dl.influxdata.com/telegraf/releases/telegraf-1.17.2_linux_amd64.tar.gz \
+	&& tar xf telegraf-1.17.2_linux_amd64.tar.gz \
+	&& rm telegraf-1.17.2_linux_amd64.tar.gz \
+	&& mkdir -p /etc/telegraf
+COPY ./srcs/telegraf.conf /etc/telegraf/telegraf.conf
+RUN chmod 777 /etc/telegraf/telegraf.conf
+
+COPY ./srcs/liveness.sh /
+RUN chmod 755 /liveness.sh
+
+ENTRYPOINT [ "sh", "/start.sh" ]

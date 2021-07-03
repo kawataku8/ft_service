@@ -1,40 +1,39 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: phpmyadmin-deployment
-  labels:
-    app: phpmyadmin
+  name: grafana-deployment
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: phpmyadmin
+      app: grafana
   template:
     metadata:
-      name: phpmyadmin-pod
       labels:
-        app: phpmyadmin
+        app: grafana
     spec:
       containers:
-      - name: phpmyadmin
-        image: tk_phpadmin_img
+      - name: grafana
+        image: tk_grafana_img
         imagePullPolicy: Never
+        # resources:
+        #   limits:
+        #     memory: "128Mi"
+        #     cpu: "500m"
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: phpmyadmin-service
+  name: grafana-service
   annotations:
     metallb.universe.tf/allow-shared-ip: shared-ip
 spec:
   selector:
-    app: phpmyadmin
+    app: grafana
   type: LoadBalancer
   ports:
-  - port: 5000
-    name: phpmyadmin
+  - name: grafana
     protocol: TCP
-    targetPort: 5000
-    nodePort: 5000
+    port: 3000
+    targetPort: 3000
