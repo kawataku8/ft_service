@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      name: mysql-pod
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: tk_mysql_img
+        imagePullPolicy: Never
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: mysql-persistent-storage
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - /liveness.sh
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 2
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+    name: mysql
+    labels:
+      app: mysql
+    annotations:
+      metallb.universe.tf/allow-shared-ip: shared-ip
+spec:
+  selector:
+    app: mysql
+  type: ClusterIP
+  ports:
+  - port: 3306
+    name: mysql
+    protocol: TCP
+    targetPort: 3306
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
